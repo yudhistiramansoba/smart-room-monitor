@@ -1,67 +1,78 @@
 # Smart Room Monitor
 
-Sistem pemantauan kondisi ruangan berbasis ESP32 yang menggunakan sensor untuk membaca suhu, kelembapan, intensitas cahaya, dan pergerakan. Data ditampilkan melalui OLED dan dashboard serta dikirim menggunakan protokol MQTT.
+Smart Room Monitor merupakan sistem pemantauan kondisi ruangan berbasis ESP32 yang menggunakan sensor suhu, kelembapan, intensitas cahaya, dan gerakan. Data sensor dikirim menggunakan protokol MQTT dan ditampilkan melalui Smart Room Dashboard.
 
-## 1. Komponen
+## 1. Komponen yang Digunakan
 
 - ESP32
-- DHT22
-- LDR Sensor Module
-- PIR HC-SR501
-- OLED SSD1306 0.96"
-- LED Hijau
-- LED Merah
+- Sensor DHT22
+- Sensor LDR
+- Sensor PIR HC-SR501
+- OLED SSD1306 I2C
+- LED hijau dan LED merah
 - Buzzer
 - Push Button
-- Resistor
+- Resistor sesuai rangkaian
+- Breadboard dan kabel jumper
 
-## 2. Konfigurasi Pin
+## 2. Tabel Pin ESP32
 
 | Komponen | Pin ESP32 |
 |---|---|
-| DHT22 Data | GPIO 4 |
-| LDR Analog | GPIO 34 |
-| PIR OUT | GPIO 27 |
+| DHT22 (DATA) | GPIO 4 |
+| LDR (OUT) | GPIO 34 |
+| PIR (OUT) | GPIO 27 |
 | LED Hijau | GPIO 25 |
 | LED Merah | GPIO 26 |
-| Buzzer (+) | GPIO 33 |
+| Buzzer | GPIO 33 |
 | Push Button | GPIO 14 |
 | OLED SDA | GPIO 21 |
 | OLED SCL | GPIO 22 |
+| OLED I2C Address | `0x3C` |
 
-Alamat I2C OLED: `0x3C`.
+## 3. Build dan Flash Firmware
 
-## 3. Fitur Sistem
+1. Install Arduino IDE.
+2. Install library yang dibutuhkan.
+3. Buka file `Smart Room.ino` melalui Arduino IDE.
+4. Pilih board ESP32 dan port yang sesuai.
+5. Klik **Verify** untuk memeriksa program.
+6. Klik **Upload** untuk mengunggah firmware ke ESP32.
 
-- Monitoring suhu dan kelembapan.
-- Monitoring intensitas cahaya.
-- Deteksi pergerakan.
-- Tampilan data melalui OLED.
-- Alarm suhu menggunakan LED dan buzzer.
-- Tombol acknowledge untuk alarm.
-- Pengiriman data sensor melalui MQTT setiap 5 detik.
-- Status perangkat online/offline menggunakan MQTT LWT.
-- Pengaturan threshold suhu melalui MQTT.
-- Monitoring melalui dashboard berbasis web.
+Seluruh file pendukung `.h` dan `.cpp` harus berada dalam satu folder proyek firmware.
+
+### Library yang Dibutuhkan
+
+- DHT sensor library
+- Adafruit SSD1306
+- Adafruit GFX Library
+- PubSubClient
+- ArduinoJson
 
 ## 4. Konfigurasi MQTT
 
-**Broker:** `broker.hivemq.com`
+Sistem menggunakan broker publik HiveMQ untuk komunikasi antara ESP32 dan dashboard.
 
-**Port ESP32:** `1883`
+| Konfigurasi | Nilai |
+|---|---|
+| Broker | `broker.hivemq.com` |
+| MQTT TCP Port | `1883` |
+| MQTT WebSocket Port | `8000` |
+| WebSocket Path | `/mqtt` |
+| Device ID | `sr_yudhi_20261107` |
 
-**WebSocket Dashboard:** `ws://broker.hivemq.com:8000/mqtt`
-
-**Device ID:** `sr_yudhi_20261107`
+### MQTT Topics
 
 | Topic | Fungsi |
 |---|---|
-| `smartroom/sr_yudhi_20261107/telemetry` | Pengiriman data sensor |
+| `smartroom/sr_yudhi_20261107/telemetry` | Mengirim data sensor |
+| `smartroom/sr_yudhi_20261107/status` | Status koneksi perangkat |
 | `smartroom/sr_yudhi_20261107/command` | Menerima perintah perubahan threshold |
-| `smartroom/sr_yudhi_20261107/status` | Status online/offline |
-| `smartroom/sr_yudhi_20261107/event` | Informasi perubahan status buzzer |
+| `smartroom/sr_yudhi_20261107/event` | Mengirim informasi perubahan status alarm |
 
-Contoh perintah perubahan threshold:
+### Contoh Perintah MQTT
+
+Untuk mengubah ambang batas suhu, kirim pesan JSON berikut ke topic command:
 
 ```json
 {
@@ -69,42 +80,45 @@ Contoh perintah perubahan threshold:
 }
 ```
 
-Pesan tersebut dikirim ke topic `smartroom/sr_yudhi_20261107/command`.
+## 5. Menjalankan Smart Room Dashboard
 
-## 5. Struktur Firmware
+Buka terminal, kemudian masuk ke folder `dashboard`:
 
-Firmware menggunakan pembagian modul:
+```bash
+cd dashboard
+```
 
-- `main.ino` – Program utama.
-- `Sensor.h / Sensor.cpp` – Pembacaan sensor.
-- `Alarm.h / Alarm.cpp` – Pengaturan alarm.
-- `Display.h / Display.cpp` – Tampilan OLED.
-- `MQTT.h / MQTT.cpp` – Komunikasi MQTT.
+Install dependency:
 
-## 6. Dashboard
+```bash
+npm install
+```
 
-Dashboard dikembangkan menggunakan React Native dan Expo.
+Jalankan aplikasi:
 
-Informasi yang ditampilkan:
-- Status koneksi MQTT.
-- Status perangkat.
-- Suhu dan kelembapan.
-- Intensitas cahaya.
-- Deteksi pergerakan.
-- Status buzzer.
-- Pengaturan threshold suhu.
+```bash
+npm start
+```
 
-## 7. Cara Pengujian
+Untuk menjalankan dashboard melalui browser, tekan tombol `w` pada terminal Expo.
 
-1. Jalankan simulasi ESP32 pada Wokwi.
-2. Pastikan ESP32 terhubung ke Wi-Fi dan broker MQTT.
-3. Jalankan dashboard.
-4. Amati data sensor yang diterima.
-5. Uji alarm dengan menaikkan suhu.
-6. Uji tombol acknowledge.
-7. Uji perubahan threshold melalui MQTT.
+## 6. Schematic dan Simulasi
 
-## 8. Catatan Implementasi
+File rangkaian dan simulasi tersedia pada direktori berikut:
 
-Proyek dikembangkan menggunakan simulator Wokwi. Pada simulasi digunakan LDR Sensor Module karena keterbatasan ketersediaan komponen. Rancangan sesuai instruksi menggunakan LDR biasa dengan resistor 10 kΩ sebagai pembagi tegangan.
+- `schematic/Schematic.fz` – File rangkaian Fritzing.
+- `schematic/schematic fritzing.png` – Gambar rangkaian Fritzing.
+- `schematic/schematic wokwi.png` – Gambar rangkaian simulasi Wokwi.
+- `schematic/wokwi-link.txt` – Tautan simulasi Wokwi.
 
+## 7. Demo
+
+Video demonstrasi sistem tersedia pada:
+
+`demo/demo-smart-room.mp4`
+
+## 8. Design Notes
+
+Dokumentasi keputusan desain, kendala selama pengerjaan, dan rencana pengembangan tersedia pada:
+
+`design-notes/design-notes.md`
